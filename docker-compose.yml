@@ -1,0 +1,51 @@
+version: '3.7'
+
+services:
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - next-commerce-network
+    depends_on:
+        - api
+        - storefront
+        - backoffice
+        - postgres
+  api:
+    image: ghcr.io/lampspace/next-commerce-api:latest
+    container_name: api-service
+    volumes:
+      - ./api:/var/www/html
+    networks:
+      - next-commerce-network
+    environment:
+      WWWUSER: '${WWWUSER:-1000}'
+  storefront:
+    image: ghcr.io/lampspace/next-commerce-storefront:latest
+    container_name: storefront-service
+  backoffice:
+    image: ghcr.io/lampspace/next-commerce-backoffice:latest
+    container_name: backoffice-service
+  postgres:
+    container_name: postgres
+    image: debezium/postgres:15-alpine
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    command: postgres -c 'max_connections=500'
+    networks:
+      - next-commerce-network
+    environment:
+      POSTGRES_DB: next_commerce
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+networks:
+  next-commerce-network:
+volumes:
+  postgres:
